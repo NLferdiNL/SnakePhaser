@@ -1,0 +1,209 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="UTF-8" />
+<title>Awesome Snake!</title>
+<script src="./js/phaser.min.js"></script>
+<style>
+body, html {
+	margin: 0;
+}
+</style>
+</head>
+<body>
+
+<script type="text/javascript">
+window.onload = function() {
+var size = {width: 800, height: 600};
+var offset = {x: 0, y: 100};
+var gameSize = {width: size.width + offset.x, height: size.height + offset.y};
+var snakeBody = [];
+var cursors;
+var food;
+var score = 0;
+var bodyLengthAtStart = 5;
+var gameEnded = false;
+var cursors;
+
+// 0 = up
+// 1 = right
+// 2 = down
+// 3 = left
+var movement = 0;
+
+var game = new Phaser.Game(gameSize.width, gameSize.height, Phaser.AUTO, '', { preload: preload, create: create, update: update });
+
+function preload () {
+	// To load:
+	// body
+	game.load.image('bg', 'assets/bg2.png');
+	game.load.image('food', 'assets/food.png');
+	game.load.image('snake', 'assets/snake.png');
+}
+
+function create () {
+	
+	game.stage.backgroundColor = "#FFFFFF"
+	
+	scoreText = game.add.text(gameSize.width / 2, 50, 'Score: 0', { fontSize: '32px', fill: '#000' });
+	scoreText.anchor.setTo(0.5,0.5);
+	
+	game.add.tileSprite(offset.x, offset.y, size.width,size.height, 'bg');
+	
+	food = game.add.sprite(Math.randomRange(1,size.width / 100) * 100 + offset.x, 
+						   Math.randomRange(1,size.height / 100) * 100 + offset.y, 
+						   'food');
+	
+	food.scale.setTo(5,5);
+						   
+	if(food.position.x >= gameSize.width) {
+		food.position.x = gameSize.width - 100;
+	}
+	
+	if(food.position.y >= gameSize.height) {
+		food.position.y = gameSize.height - 100;
+	}
+								  
+	console.log(food.position.x + ", " + food.position.y)
+	
+	createBody(); // Create body
+	
+	cursors = game.input.keyboard.createCursorKeys();
+}
+
+function update() {
+	if(gameEnded) {
+		return;
+	}
+	// Check collision with snake body or food
+	// If food: bigger
+	// If self: death	
+	KeyInput();
+	updateSnakePos();
+	
+	game.physics.arcade.overlap(snakeBody, food, ateFood, null, this); // check if ate food
+	
+	checkEndGameConditions();
+}
+
+function KeyInput() {
+	if (cursors.left.isDown) {
+        if(movement != 1) {
+			movement = 3;
+		}
+    }
+	
+	if (cursors.right.isDown) {
+		 if(movement != 3) {
+			movement = 1;
+		}
+    }
+	
+	if (cursors.up.isDown) {
+        if(movement != 2) {
+			movement = 0;
+		}
+    }
+	
+	if(cursors.down.isDown) {
+		if(movement != 0) {
+			movement = 2;
+		}
+	}
+}
+
+function checkEndGameConditions() {
+	for(var i = 0; i < snakeBody.length; i++) { // check if ate self
+		var pieceA = snakeBody[i];
+		for(var j = 0; j < snakeBody.length; j++) {
+			var pieceB = snakeBody[j];
+			
+			if(pieceA != pieceB) {
+				var condition = pieceA.position.x == pieceB.position.x &&
+								pieceA.position.y == pieceB.position.y;
+				
+				if(condition) {
+					endGame();
+				}
+			}
+		}
+	}
+	
+	var bodyPiece = snakeBody[0].position;
+	
+	if(bodyPiece.x < 0 || bodyPiece.x > gameSize.width) {
+		endGame();
+	}
+	
+	if(bodyPiece.y < 0 || bodyPiece.y > gameSize.height) {
+		endGame();
+	}
+}
+
+function updateSnakePos() {
+	var lastPiece = snakeBody.pop();
+	lastPiece.position = snakeBody[0].position;
+	
+	switch(movement) {
+		case 0: // up
+			lastPiece.position.y -= 10;
+			break;
+		case 1: // right
+			lastPiece.position.x += 10;
+			break;
+		case 2: // down
+			lastPiece.position.y += 10;
+			break;
+		case 3: // left
+			lastPiece.position.x -= 10;
+			break;
+	}
+	
+	snakeBody.shift(snakeBody.pop());
+}
+
+function ateFood() {
+	score += 100; // Add points and update text.
+	scoreText.text = "Score: " + score;
+	
+	// And add a piece.
+	
+	var newPiecePos = {x: snakeBody[snakeBody.length].position.x,
+					   y: snakeBody[snakeBody.length].position.y};
+	
+	addBodyPart(newPiecePos.x, newPiecePos.y);
+}
+
+function addBodyPart(x,y) {
+	var bodyPiece = game.add.sprite(x, y, 'snake');
+	
+	return bodyPiece;
+}
+
+function createBody() {
+	// Due to Phaser not allowing easy access to first child and last child
+	// I'll be using an array.
+	
+	var startPos = {x:Math.randomRange(3,size.width / 100 - 2) * 100 + offset.x, 
+				    y:Math.randomRange(3,size.height / 100 - 2) * 100 + offset.y};
+	
+	for(var i = 0; i < bodyLengthAtStart; i++) {
+		snakeBody.push(addBodyPart(startPos.x + i * 10, startPos.y));
+	}
+	
+}
+
+function endGame() {
+	console.log('rip');
+}
+
+};
+
+Math.randomRange = function(min, max) {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+</script>
+
+</body>
+</html>
